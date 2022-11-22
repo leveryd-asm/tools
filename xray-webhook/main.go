@@ -16,6 +16,10 @@ import (
 var webhookURL = os.Getenv("WEBHOOK_URL")
 
 func sendToQYWX(msg string) {
+	// text message can not contain \n
+	msg = strings.ReplaceAll(msg, "\n", "<br>")
+	msg = strings.ReplaceAll(msg, "\r", "<br>")
+
 	content := fmt.Sprintf(`{"msgtype": "text", "text": {"content": "%s"}}`, msg)
 	transport := http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
