@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
 	"github.com/tidwall/gjson"
 	"io/ioutil"
@@ -16,7 +17,11 @@ var webhookURL = os.Getenv("WEBHOOK_URL")
 
 func sendToQYWX(msg string) {
 	content := fmt.Sprintf(`{"msgtype": "text", "text": {"content": "%s"}}`, msg)
-	_, err := http.Post(webhookURL, "application/json", strings.NewReader(content))
+	transport := http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := http.Client{Transport: &transport}
+	_, err := client.Post(webhookURL, "application/json", strings.NewReader(content))
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -39,10 +44,10 @@ func main() {
 	if webhookURL == "" {
 		log.Fatalln("env WEBHOOK_URL is empty")
 	}
-	// Add handle func for producer.
+	// Add handle func for webhook.
 	http.HandleFunc("/webhook", xrayWebhook())
 
 	// Run the web server.
-	fmt.Println("start producer-api ... !!")
+	fmt.Println("start webhook api !!")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
