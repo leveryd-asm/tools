@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -20,15 +21,27 @@ func sendToQYWX(msg string) {
 	msg = strings.ReplaceAll(msg, "\n", "<br>")
 	msg = strings.ReplaceAll(msg, "\r", "<br>")
 
-	content := fmt.Sprintf(`{"msgtype": "text", "text": {"content": "%s"}}`, msg)
+	// escape quotes
+	msg = strconv.Quote(msg)
+
+	// text msg length can not be more than 2048 byte
+	// https://work.weixin.qq.com/api/doc/90000/90136/91770
+	if len(msg) > 2048 {
+		msg = msg[:2000] + "..."
+	}
+
+	content := fmt.Sprintf(`{"msgtype": "text", "text": {"content": %s}}`, msg)
 	transport := http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 	client := http.Client{Transport: &transport}
 	_, err := client.Post(webhookURL, "application/json", strings.NewReader(content))
+
 	if err != nil {
 		log.Fatalln(err)
 	}
+
+	// todo: check response status code and body
 }
 
 func xrayWebhook() func(http.ResponseWriter, *http.Request) {
@@ -55,3 +68,37 @@ func main() {
 	fmt.Println("start webhook api !!")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
+
+/*
+test command:
+
+curl 127.0.0.1:8080/webhook -d '{
+  "type": "web_vuln",
+  "data": {
+    "create_time": 1604736253090,
+    "detail": {
+      "addr": "http://127.0.0.1:9000/xss/example1.php?name=hacker",
+      "extra": {
+        "param": {
+          "key": "name",
+          "position": "query",
+          "value": "pkbnekwkjhwzabxnfjwh"
+        }
+      },
+      "payload": "<sCrIpT>alert(1)</ScRiPt>",
+      "snapshot": [
+        [
+          "GET /xxx",
+          "HTTP/1.1 200 OK"
+        ]
+      ]
+    },
+    "plugin": "xss/reflected/default",
+    "target": {
+      "params": [],
+      "url": "http://127.0.0.1:9000/xss/example1.php"
+    }
+  }
+}'
+
+*/
