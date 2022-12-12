@@ -37,3 +37,8 @@ func TestGjson(t *testing.T) {
 	detail := gjson.Get(body, "data.detail")
 	println(detail.String())
 }
+
+func TestSendToApi(t *testing.T) {
+	body := `1234`
+	sendToApi(body)
+}
