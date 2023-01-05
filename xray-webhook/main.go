@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/tidwall/gjson"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -39,7 +40,14 @@ func sendToQYWX(msg string) {
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 	client := http.Client{Transport: &transport}
-	_, err := client.Post(webhookURL, "application/json", strings.NewReader(content))
+	res, err := client.Post(webhookURL, "application/json", strings.NewReader(content))
+
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+
+		}
+	}(res.Body)
 
 	if err != nil {
 		log.Fatalln(err)
@@ -75,7 +83,15 @@ func sendToApi(msg string) {
 		return
 	}
 
-	_, err = http.Post(api, "application/json", requestBody)
+	res, err := http.Post(api, "application/json", requestBody)
+
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+
+		}
+	}(res.Body)
+
 	if err != nil {
 		return
 	}
