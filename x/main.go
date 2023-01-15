@@ -1,90 +1,71 @@
 package main
 
 import (
-	"bufio"
-	"bytes"
-	"crypto/md5"
-	"encoding/json"
-	"flag"
-	"fmt"
-	"net/http"
-	"os"
-	"strings"
-	"time"
+	xFlag "flag"
+	"log"
 )
 
-var nucleiResultFile, server string
+var server string
 
-func sendToApi(msg string) {
-	if server == "" && os.Getenv("server") != "" {
-		server = os.Getenv("server")
-	}
-	if server == "" {
-		panic("server address is empty")
-		return
-	}
-	alarmInfo := msg
-	m := md5.New()
-	m.Write([]byte(alarmInfo))
-	alarmMd5 := fmt.Sprintf("%x", m.Sum(nil))
+func saveNucleiAlarm(args []string) {
+	flag := xFlag.NewFlagSet("nuclei", xFlag.ExitOnError)
 
-	timeNow := time.Now().Format("2006-01-02 15:04:05")
-
-	post := map[string]interface{}{
-		"alarminfo":  alarmInfo,
-		"alarm_md5":  alarmMd5,
-		"enable":     1,
-		"status":     "待处理",
-		"uploaddate": timeNow,
-	}
-	api := server + "/api/alarm/bbscan/add"
-
-	requestBody := new(bytes.Buffer)
-	err := json.NewEncoder(requestBody).Encode(post)
-	if err != nil {
-		return
-	}
-
-	_, err = http.Post(api, "application/json", requestBody)
-	if err != nil {
-		return
-	}
-}
-
-func sendAlert(alert string) {
-	x := strings.Split(alert, " ")
-	if len(x) == 0 {
-		return
-	}
-
-	url := x[len(x)-1]
-	if strings.HasPrefix(url, "http") {
-		msg := fmt.Sprintf("<a href='%s'>%s</a>", url, alert)
-		sendToApi(msg)
-	} else {
-		sendToApi(alert)
-	}
-}
-
-func main() {
-	flag.StringVar(&nucleiResultFile, "f", "", "nuclei result file path")
 	flag.StringVar(&server, "api", "", "api address, such as 'http://x.x.x.x:8080'")
-	flag.Parse()
+	nucleiResultFile := flag.String("f", "", "nuclei result file path")
 
-	if nucleiResultFile == "" {
+	flag.Parse(args)
+	args = flag.Args()
+
+	if *nucleiResultFile == "" {
 		flag.Usage()
 		return
 	}
 
-	file, err := os.Open(nucleiResultFile)
-	if err != nil {
-		panic(err)
-		return
+	saveNucleiResult(*nucleiResultFile)
+}
+
+func scanManageSystemProxy(args []string) {
+	flag := xFlag.NewFlagSet("scan", xFlag.ExitOnError)
+	index := flag.String("index", "proxify", "es index")
+	esUrl := flag.String("esURL", "http://localhost:9200", "es url")
+	q := flag.String("q", "*", "what you want to search")
+
+	flag.Parse(args)
+	args = flag.Args()
+
+	fingerprintManageSystem(*esUrl, *index, *q)
+}
+
+func getSubdomainProxy(args []string) {
+	flag := xFlag.NewFlagSet("subdomain", xFlag.ExitOnError)
+	index := flag.String("index", "proxify", "es index")
+	esUrl := flag.String("esURL", "http://localhost:9200", "es url")
+	domain := flag.String("domain", "", "whose subdomain you want to get")
+	of := flag.String("of", "", "output file path")
+
+	flag.Parse(args)
+	args = flag.Args()
+
+	getSubdomain(*esUrl, *index, *domain, *of)
+}
+
+func main() {
+	xFlag.Parse()
+
+	args := xFlag.Args()
+	if len(args) == 0 {
+		log.Fatal("Please specify a subcommand.")
 	}
-	defer file.Close()
-	fileScanner := bufio.NewScanner(file)
-	for fileScanner.Scan() {
-		println(fileScanner.Text())
-		sendAlert(fileScanner.Text())
+	cmd, args := args[0], args[1:]
+	switch cmd {
+	case "nuclei":
+		saveNucleiAlarm(args)
+	case "ms", "manage-system":
+		scanManageSystemProxy(args)
+	case "subdomain": // from es http log extract subdomain
+		getSubdomainProxy(args)
+	default:
+		log.Fatalf("Unrecognized command %q. "+
+			"Command must be one of: branch, checkout", cmd)
 	}
 }
