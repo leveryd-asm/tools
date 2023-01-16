@@ -10,14 +10,22 @@ import (
 	"sync"
 )
 
-type detectWay struct {
+type detectWayConfig struct {
 	detectWay1 bool
 	detectWay2 bool
 	detectWay3 bool
 }
 
+type screenshotConfig struct {
+	screenshotServiceApi string
+}
+
+var shotConfigIns screenshotConfig
+var detectWayConfigIns detectWayConfig
+
 // this file is used to identify the manage system
 var resultUrlList = make([]string, 0)
+var resultUrlScreenshotMap = make(map[string]string, 0)
 
 func identifyMS(args []string) {
 	flag := xFlag.NewFlagSet("identifyMS", xFlag.ExitOnError)
@@ -28,12 +36,12 @@ func identifyMS(args []string) {
 	outputFilePath := flag.String("of", "", "result output file path")
 
 	detectWay1 := flag.Bool("whk", true, "detect way host keyword")
-	detectWay2 := flag.Bool("wrk", true, "detect way response keyword")
+	detectWay2 := flag.Bool("wrk", false, "detect way response keyword")
 	detectWay3 := flag.Bool("wre", true, "detect way response element")
 
 	flag.Parse(args)
 
-	detectWay := detectWay{
+	detectWayConfigIns = detectWayConfig{
 		detectWay1: *detectWay1,
 		detectWay2: *detectWay2,
 		detectWay3: *detectWay3,
@@ -45,9 +53,9 @@ func identifyMS(args []string) {
 	}
 
 	if *target != "" {
-		identifyManageSystem(*target, detectWay)
+		identifyManageSystem(*target)
 	} else {
-		identifyManageSystemFromFile(*targetFilePath, *concurrency, detectWay)
+		identifyManageSystemFromFile(*targetFilePath, *concurrency)
 	}
 
 	if *outputFilePath != "" {
@@ -55,9 +63,9 @@ func identifyMS(args []string) {
 	}
 }
 
-func identifyManageSystem(url string, detectWay detectWay) {
+func identifyManageSystem(url string) {
 	//println("DEBUG", url)
-	if detectWay.detectWay1 {
+	if detectWayConfigIns.detectWay1 {
 		host := getHost(url)
 		if isHostContainMSKeyword(host) {
 			println(url)
@@ -65,7 +73,7 @@ func identifyManageSystem(url string, detectWay detectWay) {
 		}
 	}
 
-	if detectWay.detectWay2 || detectWay.detectWay3 {
+	if detectWayConfigIns.detectWay2 || detectWayConfigIns.detectWay3 {
 		if !strings.HasPrefix(url, "http") {
 			url = "https://" + url
 		}
@@ -81,19 +89,24 @@ func identifyManageSystem(url string, detectWay detectWay) {
 
 		ct := res.Header.Get("Content-Type")
 		if strings.Contains(ct, "text/html") {
-			if detectWay.detectWay2 && isBodyContainMSKeyword(string(body)) {
-				println(url)
-				resultUrlList = append(resultUrlList, url)
-			}
-			if detectWay.detectWay3 && isVue(string(body)) {
-				println(url)
-				resultUrlList = append(resultUrlList, url)
+			if detectWayConfigIns.detectWay2 && isBodyContainMSKeyword(string(body)) {
+				afterFindMS(url)
+			} else if detectWayConfigIns.detectWay3 && isVue(string(body)) {
+				afterFindMS(url)
 			}
 		}
 	}
 }
 
-func identifyManageSystemFromFile(filePath string, concurrency int, detectWay detectWay) {
+func afterFindMS(msURL string) {
+	println(msURL)
+	resultUrlList = append(resultUrlList, msURL)
+	if shotConfigIns.screenshotServiceApi != "" {
+		resultUrlScreenshotMap[msURL] = shot(msURL)
+	}
+}
+
+func identifyManageSystemFromFile(filePath string, concurrency int) {
 	f, err := os.Open(filePath)
 	if err != nil {
 		println("file does not exist")
@@ -115,7 +128,7 @@ func identifyManageSystemFromFile(filePath string, concurrency int, detectWay de
 				if targetURL == "" {
 					break
 				}
-				identifyManageSystem(targetURL, detectWay)
+				identifyManageSystem(targetURL)
 			}
 			wg.Done()
 		}()

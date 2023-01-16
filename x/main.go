@@ -68,6 +68,8 @@ func main() {
 		identifyMS(args)
 	case "es":
 		es(args)
+	case "ss", "screenshot":
+		screenshot(args)
 	default:
 		log.Fatalf("Unrecognized command %q. "+
 			"Command must be one of: branch, checkout", cmd)

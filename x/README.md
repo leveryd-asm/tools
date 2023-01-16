@@ -8,4 +8,15 @@ x nuclei -f /Users/leveryd/Downloads/nuclei-result.json -api http://192.168.0.11
 ./x subdomain -esURL http://192.168.0.110:32116 -domain "apple.com" -of /tmp/result
 ```
 
+# 识别后台管理系统
+```
+./x ims -u https://xxx.com
+./x ims -if /tmp/1
+```
+
+# url截图
+```
+./x ss -sssUrl http://192.168.0.110:31824 -u https://www.baidu.com -of ~/Downloads/ -ot dir
+```
+
 # 从es http日志中识别后台管理系统
