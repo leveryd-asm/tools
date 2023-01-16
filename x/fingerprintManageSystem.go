@@ -40,52 +40,22 @@ func isHostContainMSKeyword(host string) bool {
 }
 
 func isVue(resBody string) bool {
+	result := false
+
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(resBody))
 	if err != nil {
 		return false
 	}
 	selection := doc.Contents()
-	c := selection.Children()
-
-	bodyTags := make([]string, 0)
-	divElements := 0
-	for i := 0; i < c.Length(); i++ {
-		if goquery.NodeName(c.Eq(i)) == "body" {
-			for j := 0; j < c.Eq(i).Children().Length(); j++ {
-				selection := c.Eq(i).Children().Eq(j)
-				tagName := goquery.NodeName(selection)
-				bodyTags = append(bodyTags, tagName)
-				if tagName == "div" {
-					divElements = selection.Children().Length()
-				} else if tagName == "script" {
-					if selection.Text() != "" {
-						return false
-					}
-				}
+	if selection.Find("script").Length() > 0 {
+		selection.Find("script").Each(func(i int, s *goquery.Selection) {
+			src, exist := s.Attr("src")
+			if exist && (strings.Contains(src, "/manifest.") || strings.Contains(src, "/vendor.") || strings.Contains(src, "/app.")) {
+				result = true
 			}
-		}
+		})
 	}
-
-	var hasScript, hasDiv bool
-
-	if divElements > 3 {
-		return false
-	}
-	for _, t := range bodyTags {
-		if t == "div" {
-			hasDiv = true
-		} else if t == "script" {
-			hasScript = true
-		} else if t == "noscript" {
-		} else {
-			return false
-		}
-	}
-
-	if hasScript && hasDiv {
-		return true
-	}
-	return false
+	return result
 }
 
 /*
