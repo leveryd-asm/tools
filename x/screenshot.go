@@ -51,7 +51,7 @@ func (o *output) write(url, screenshot string) {
 		}
 	} else if o.outputType == "csv" {
 		// write to file
-		file.Write([]byte(url + " " + screenshot))
+		file.Write([]byte(url + " " + screenshot + "\n"))
 	} else if o.outputType == "dir" {
 		_, err = file.Write([]byte(screenshot))
 		if err != nil {
@@ -72,8 +72,8 @@ func screenshot(args []string) {
 	concurrency := flag.Int("t", 10, "concurrency num when target is url file")
 
 	// output config
-	outputType := flag.String("ot", "html", "output type, support html/csv/dir")
-	outputFilepath := flag.String("of", "/tmp/screenshot.html", "output file path")
+	outputType := flag.String("ot", "csv", "output type, support html/csv/dir")
+	outputFilepath := flag.String("of", "/tmp/screenshot.csv", "output file path")
 
 	flag.Parse(args)
 	if *api == "" {
