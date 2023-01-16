@@ -64,6 +64,10 @@ func main() {
 		scanManageSystemProxy(args)
 	case "subdomain": // from es http log extract subdomain
 		getSubdomainProxy(args)
+	case "ims", "identifyMS":
+		identifyMS(args)
+	case "es":
+		es(args)
 	default:
 		log.Fatalf("Unrecognized command %q. "+
 			"Command must be one of: branch, checkout", cmd)
