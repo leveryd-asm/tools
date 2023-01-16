@@ -62,5 +62,5 @@ jobs:
       with:
         context: .
         push: true
-        tags: leveryd/x-tool:v2022.12.14
+        tags: leveryd/x-tool:v2023.1.16
         file: x/Dockerfile
