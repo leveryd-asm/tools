@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	xFlag "flag"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"
 	"os"
@@ -34,6 +35,7 @@ func identifyMS(args []string) {
 	targetFilePath := flag.String("if", "", "target url file path")
 	concurrency := flag.Int("t", 10, "concurrency num when target is url file")
 	outputFilePath := flag.String("of", "", "result output file path")
+	debug := flag.Bool("debug", false, "debug mode")
 
 	detectWay1 := flag.Bool("whk", true, "detect way host keyword")
 	detectWay2 := flag.Bool("wrk", false, "detect way response keyword")
@@ -52,6 +54,10 @@ func identifyMS(args []string) {
 		return
 	}
 
+	if debug != nil && *debug {
+		log.SetLevel(log.DebugLevel)
+	}
+
 	if *target != "" {
 		identifyManageSystem(*target)
 	} else {
@@ -64,7 +70,7 @@ func identifyMS(args []string) {
 }
 
 func identifyManageSystem(url string) {
-	//println("DEBUG", url)
+	log.Debug("identify: ", url)
 	if detectWayConfigIns.detectWay1 {
 		host := getHost(url)
 		if isHostContainMSKeyword(host) {
@@ -79,6 +85,7 @@ func identifyManageSystem(url string) {
 		}
 		res, err := http.Get(url)
 		if err != nil || res == nil {
+			log.Warn("get url error: ", url)
 			return
 		}
 
