@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"crypto/tls"
 	xFlag "flag"
 	log "github.com/sirupsen/logrus"
 	"net/http"
@@ -74,8 +75,8 @@ func identifyManageSystem(url string) {
 	if detectWayConfigIns.detectWay1 {
 		host := getHost(url)
 		if isHostContainMSKeyword(host) {
-			println(url)
-			resultUrlList = append(resultUrlList, url)
+			afterFindMS(url)
+			return
 		}
 	}
 
@@ -83,7 +84,12 @@ func identifyManageSystem(url string) {
 		if !strings.HasPrefix(url, "http") {
 			url = "https://" + url
 		}
-		res, err := http.Get(url)
+
+		tr := &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+		client := &http.Client{Transport: tr}
+		res, err := client.Get(url)
 		if err != nil || res == nil {
 			log.Warn("get url error: ", url)
 			return
@@ -98,8 +104,10 @@ func identifyManageSystem(url string) {
 		if strings.Contains(ct, "text/html") {
 			if detectWayConfigIns.detectWay2 && isBodyContainMSKeyword(string(body)) {
 				afterFindMS(url)
+				return
 			} else if detectWayConfigIns.detectWay3 && isVue(string(body)) {
 				afterFindMS(url)
+				return
 			}
 		}
 	}
