@@ -6,6 +6,8 @@ import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"github.com/tidwall/gjson"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -26,7 +28,11 @@ func getSubdomainProxy(args []string) {
 
 	// console source
 	consoleUrl := flag.String("consoleUrl", "http://console.com:32115", "console url")
-	q := flag.String("q", "limit=100000", "additional query")
+	q := flag.String("q", "limit=1000", "additional query") // if u fetch 10000, http client will time out
+
+	// mysql source
+	mysqlDataSource := flag.String("datasource", "root:console_db_root_password@tcp(mysql-service)/cute", "mysql datasource")
+	mysqlSQL := flag.String("sql", "limit 10000", "mysql condition")
 
 	// save action
 	of := flag.String("of", "", "output file path")
@@ -46,6 +52,41 @@ func getSubdomainProxy(args []string) {
 		getSubdomainFromConsole(*consoleUrl, *domain, *q, *of)
 	} else if *action == "save" && *source == "console" {
 		saveSubdomainFromConsole(*consoleUrl, *domain, *subdomainsFilePath)
+	} else if *action == "get" && *source == "mysql" {
+		getSubdomainFromMysql(*mysqlDataSource, *domain, *mysqlSQL, *of, *debug)
+	} else {
+		flag.Usage()
+	}
+
+}
+
+func getSubdomainFromMysql(DataSource string, domain, q, of string, debug bool) {
+	log.Debug("get subdomain from mysql, ", DataSource)
+	db, err := gorm.Open(mysql.Open(DataSource), &gorm.Config{})
+	if err != nil {
+		log.Warn("open mysql failed")
+		return
+	}
+	if debug {
+		db = db.Debug()
+	}
+
+	result := make([]string, 0)
+
+	where := "parentdomain = ? "
+	if q != "" {
+		where += q
+	}
+	//db.Table("subdomain").Where(where, domain).Find(&result)
+	db.Raw("select subdomain from subdomain where "+where, domain).Scan(&result)
+
+	if of != "" {
+		log.Debug("write subdomain to file: ", of)
+		writeFile(of, result)
+	} else {
+		for _, i := range result {
+			fmt.Println(i)
+		}
 	}
 }
 
