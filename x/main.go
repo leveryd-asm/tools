@@ -36,19 +36,6 @@ func scanManageSystemProxy(args []string) {
 	fingerprintManageSystem(*esUrl, *index, *q)
 }
 
-func getSubdomainProxy(args []string) {
-	flag := xFlag.NewFlagSet("subdomain", xFlag.ExitOnError)
-	index := flag.String("index", "proxify", "es index")
-	esUrl := flag.String("esURL", "http://localhost:9200", "es url")
-	domain := flag.String("domain", "", "whose subdomain you want to get")
-	of := flag.String("of", "", "output file path")
-
-	flag.Parse(args)
-	args = flag.Args()
-
-	getSubdomain(*esUrl, *index, *domain, *of)
-}
-
 func main() {
 	xFlag.Parse()
 

@@ -5,7 +5,12 @@ x nuclei -f /Users/leveryd/Downloads/nuclei-result.json -api http://192.168.0.11
 
 # 从es http日志中收集子域名
 ```
-./x subdomain -esURL http://192.168.0.110:32116 -domain "apple.com" -of /tmp/result
+./x subdomain -esURL http://192.168.0.110:9200 -domain "apple.com" -of /tmp/result
+```
+
+# 从console api中收集子域名
+```
+./x subdomain -action get -source console -q limit=3000 -domain baidu.com
 ```
 
 # 识别后台管理系统
