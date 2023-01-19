@@ -42,16 +42,11 @@ func sendToQYWX(msg string) {
 	client := http.Client{Transport: &transport}
 	res, err := client.Post(webhookURL, "application/json", strings.NewReader(content))
 
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-
-		}
-	}(res.Body)
-
-	if err != nil {
+	if err != nil || res == nil {
 		log.Fatalln(err)
+		return
 	}
+	defer res.Body.Close()
 
 	// todo: check response status code and body
 }
