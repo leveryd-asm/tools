@@ -46,7 +46,7 @@ jobs:
       with:
         context: ./xray
         push: true
-        tags: leveryd/xray:v2022.11.22
+        tags: leveryd/xray:v2023.2.21
         file: xray/Dockerfile
 
     - name: Build and push producer Docker image
