@@ -64,3 +64,11 @@ jobs:
         push: true
         tags: leveryd/x-tool:v2023.1.16
         file: x/Dockerfile
+
+    - name: Build and push base image
+      uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+      with:
+        context: .
+        push: true
+        tags: leveryd/ubuntu:base
+        file: tool-image/Dockerfile
