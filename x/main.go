@@ -59,6 +59,8 @@ func main() {
 		screenshot(args)
 	case "console":
 		console(args)
+	case "txt":
+		txt(args)
 	default:
 		log.Fatalf("Unrecognized command %q. "+
 			"Command must be one of: branch, checkout", cmd)

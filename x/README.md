@@ -30,3 +30,8 @@ x nuclei -f /Users/leveryd/Downloads/nuclei-result.json -api http://192.168.0.11
 ```
 
 # 从es http日志中识别后台管理系统
+
+# 从文本中提取域名信息
+```
+./x txt
+```
