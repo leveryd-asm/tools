@@ -92,6 +92,7 @@ func extractSubdomain(txt string) {
 	txt = strings.ToLower(txt)
 	txt = strings.ReplaceAll(txt, "%3a%2f%2f", "=")
 	txt = strings.ReplaceAll(txt, "%253a%252f%252f", "=")
+	txt = strings.ReplaceAll(txt, "%2f", "=")
 
 	lines := strings.Split(txt, "<br>")
 	for _, line := range lines {
